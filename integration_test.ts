@@ -50,8 +50,9 @@ async function slack(method: string, payload: Record<string, unknown>) {
   return { ok: true };
 }
 
-function fakeSlack(realDatastore: boolean) {
+function fakeSlack(realDatastore: boolean, unavailableDM?: string) {
   const items = new Map<string, Record<string, string>>();
+  const notices: Array<{ channel: string; user: string; text: string }> = [];
   const messages: Array<
     { channel: string; text: string; blocks?: unknown[]; ts: string }
   > = [];
@@ -111,6 +112,9 @@ function fakeSlack(realDatastore: boolean) {
         text: string;
         blocks?: unknown[];
       }) {
+        if (channel === unavailableDM) {
+          return { ok: false, error: "channel_not_found" };
+        }
         const message = {
           channel,
           text,
@@ -127,7 +131,8 @@ function fakeSlack(realDatastore: boolean) {
       }) {
         return Promise.resolve({ ok: true, channel, text, blocks });
       },
-      postEphemeral() {
+      postEphemeral(notice: { channel: string; user: string; text: string }) {
+        notices.push(notice);
         return { ok: true };
       },
     },
@@ -137,7 +142,7 @@ function fakeSlack(realDatastore: boolean) {
       },
     },
   } as never;
-  return { client, items, messages };
+  return { client, items, messages, notices };
 }
 
 Deno.test("parcours complet persiste missions, rapporte une fois et calcule les scores", async () => {
@@ -243,4 +248,49 @@ Deno.test("parcours complet persiste missions, rapporte une fois et calcule les 
       await slack("delete", { datastore: "operations", id });
     }
   }
+});
+
+Deno.test("un DM en échec laisse la partie en cours et prévient l’agent qui l’a lancée", async () => {
+  const { client, items, messages, notices } = fakeSlack(false, "D-U2");
+  const channel = "C1";
+  const organizer = "U1";
+  await createOperation(client, channel, organizer);
+  const invitation = messages[0];
+  const id = [...items.values()][0].id;
+  const act = (user: string, action: string) =>
+    handleGameAction({
+      client,
+      action: { action_id: `cornichon_${action}`, value: id },
+      body: {
+        user: { id: user },
+        channel: { id: channel },
+        message: { ts: invitation.ts },
+      },
+    });
+
+  await act(organizer, "join");
+  await act("U2", "join");
+  await act(organizer, "start");
+
+  const saved = items.get(`operations:${id}`)?.operation;
+  if (!saved) throw new Error("L’opération doit être enregistrée.");
+  const operation = JSON.parse(saved);
+  assertEquals(operation.status, "active");
+  assertEquals(Object.keys(operation.words), [organizer, "U2"]);
+  assertEquals(
+    messages.filter((message) => message.channel.startsWith("D-")).map((
+      message,
+    ) => message.channel),
+    ["D-U1"],
+  );
+  assertEquals(notices, [{
+    channel,
+    user: organizer,
+    text:
+      "L’action est enregistrée. Le QG n’a pas pu transmettre tous les messages.",
+  }]);
+
+  await act(organizer, "start");
+  assertEquals(items.get(`operations:${id}`)?.operation, saved);
+  assertEquals(messages.length, 2);
 });

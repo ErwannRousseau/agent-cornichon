@@ -1,14 +1,8 @@
 import type { SlackAPIClient } from "deno-slack-sdk/types.ts";
-import { type Action, type Operation, transition } from "./game.ts";
+import type { Operation } from "./game.ts";
+import { openOperation, updateOperation } from "./operations.ts";
 import { stickers } from "./stickers.ts";
-import {
-  blockedAgents,
-  checked,
-  getOperation,
-  getReport,
-  saveOperation,
-  saveReport,
-} from "./store.ts";
+import { checked, getOperation, getReport, saveReport } from "./store.ts";
 
 const operationTitle = "Opération Cornichon";
 
@@ -33,15 +27,7 @@ export async function createOperation(
   channel: string,
   user: string,
 ) {
-  const operation: Operation = {
-    id: crypto.randomUUID(),
-    channel,
-    organizer: user,
-    status: "recruiting",
-    players: [],
-    words: {},
-  };
-  await saveOperation(client, operation);
+  const operation = await openOperation(client, channel, user);
   checked(
     await client.chat.postMessage({
       channel,
@@ -72,18 +58,17 @@ export async function handleGameAction(
   if (!action.value || !channel || !ts) return;
 
   try {
-    const operation = await getOperation(client, action.value);
-    if (!operation) {
-      await notify(
-        client,
-        channel,
-        user,
-        "Le QG ne retrouve plus cette opération.",
-      );
-      return;
-    }
-
     if (intent === "success" || intent === "failure") {
+      const operation = await getOperation(client, action.value);
+      if (!operation) {
+        await notify(
+          client,
+          channel,
+          user,
+          "Le QG ne retrouve plus cette opération.",
+        );
+        return;
+      }
       if (
         operation.status !== "finished" || !operation.players.includes(user)
       ) {
@@ -111,26 +96,18 @@ export async function handleGameAction(
       return;
     }
 
-    if (channel !== operation.channel) return;
-    const blocked = intent === "join" || intent === "start"
-      ? await blockedAgents(client, channel)
-      : new Set<string>();
-
-    let updated: Operation;
-    try {
-      updated = transition(operation, user, intent as Action, blocked);
-    } catch (error) {
-      await notify(
-        client,
-        channel,
-        user,
-        error instanceof Error ? error.message : "Action indisponible.",
-      );
+    const updated = await updateOperation(
+      client,
+      action.value,
+      channel,
+      user,
+      intent,
+    );
+    if (!updated) return;
+    if ("notice" in updated) {
+      await notify(client, channel, user, updated.notice);
       return;
     }
-
-    if (updated === operation) return;
-    await saveOperation(client, updated);
 
     const sticker = await stickers(client);
     const effects = [
@@ -147,7 +124,7 @@ export async function handleGameAction(
     if (results.some((result) => result.status === "rejected")) {
       console.error(
         "Slack delivery incomplete",
-        operation.id,
+        updated.id,
         results.filter((result) => result.status === "rejected").length,
       );
       await notify(

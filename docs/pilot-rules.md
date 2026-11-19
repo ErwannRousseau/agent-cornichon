@@ -11,6 +11,8 @@
 - **Ouvrir les inscriptions** immediately posts the **Opération Cornichon**
   invitation with the player count and buttons to join, leave, and start.
 - Agents receive missions and report requests by DM.
+- If a mission DM fails to send after launch, the operation stays active. The
+  person who started it receives a private notice that delivery was incomplete.
 
 ## Game rules
 
