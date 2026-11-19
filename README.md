@@ -1,16 +1,19 @@
-<img src="assets/icon.png" alt="Agent Cornichon wearing spy sunglasses" width="112" align="right">
+<p align="center">
+  <img src="assets/icon.png" alt="Agent Cornichon wearing spy sunglasses" width="128">
+</p>
 
-# Agent Cornichon 🥒
+<h1 align="center">Agent Cornichon</h1>
 
-**Your secret word is _brouette_ (wheelbarrow). Slip it into your next
-meeting.**
+<p align="center">
+  Your secret word is <strong><em>brouette</em></strong> (wheelbarrow).<br>
+  Slip it into your next meeting to earn <strong>pickles</strong>.
+</p>
 
-Agent Cornichon turns a team meeting into an undercover mission. Pickle HQ sends
-you a secret word in Slack. Work it into the conversation to earn **30
-pickles**.
-
-[Play a round](#play-a-round) · [Deploy to the sandbox](#deploy-to-the-sandbox)
-· [Pilot rules](docs/pilot-rules.md)
+<p align="center">
+  <a href="#play-a-round">Play a round</a> ·
+  <a href="#deploy-to-the-sandbox">Deploy to the sandbox</a> ·
+  <a href="docs/pilot-rules.md">Pilot rules</a>
+</p>
 
 ## Play a round
 
@@ -29,11 +32,15 @@ This command updates the app already installed in **`agent-cornichon-dev`**. You
 need Node.js with `npx` and the Slack CLI. Use `slack login` to sign in and
 `slack auth list` to check your account.
 
-Run this from the repository root. `npx` makes Deno available to the Slack CLI
-during deployment.
+From the repository root, run `slack app list`. Find the `agent-cornichon-dev`
+entry and copy its **App ID** and **Team ID**. Use the **Team ID** on that
+entry. The **Workspace Grant** identifies a different target.
+
+Replace `APP_ID` and `TEAM_ID` in the command below with those values. `npx`
+makes Deno available to the Slack CLI during deployment.
 
 ```sh
-npx --yes --package deno -c 'slack deploy --app A0CJV0SU46A --team E0CJWHE6D1Q --manifest-source local --hide-triggers'
+npx --yes --package deno -c 'slack deploy --app APP_ID --team TEAM_ID --manifest-source local --hide-triggers'
 ```
 
 When the CLI prints `Agent Cornichon deployed`, open the **Cornichon** shortcut
