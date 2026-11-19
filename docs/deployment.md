@@ -1,7 +1,7 @@
 # Deploy Agent Cornichon
 
 Install Deno 2.9.6 and the Slack CLI, then run `slack login`. For an existing
-installation, use the **App ID** and **Team ID** from the same row in
+installation, use the **App ID** and **Team ID** from the deployed app's row in
 `slack app list`. For a first deploy, use `deployed` in place of `APP_ID`. On
 Enterprise Grid, add `--org-workspace-grant WORKSPACE_ID` to the first deploy
 and trigger creation to target one workspace.
@@ -21,6 +21,19 @@ If the trigger changes, use `slack trigger update` with the same flags and
 `--trigger-id TRIGGER_ID`. To roll back, redeploy the last known good commit to
 the same app and restore the earlier trigger if needed. Check Datastore schema
 compatibility before rolling back a schema change.
+
+## Give everyone in the workspace access
+
+List the triggers for the deployed app and copy the **Trigger ID** for
+**Cornichon**.
+
+```sh
+slack trigger list --app APP_ID --team TEAM_ID
+slack trigger access --app APP_ID --team TEAM_ID --trigger-id TRIGGER_ID --everyone
+```
+
+Ask a colleague to open Slack's `/` menu and select **Cornichon** to confirm
+they can open the QG.
 
 ## Smoke test
 
