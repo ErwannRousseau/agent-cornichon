@@ -1,5 +1,6 @@
 import { createOperation, handleGameAction } from "./interaction.ts";
-import { scoreFor } from "./store.ts";
+import { openOperation, updateOperation } from "./operations.ts";
+import { scoreFor, submitReport } from "./reports.ts";
 
 function assertEquals(actual: unknown, expected: unknown) {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
@@ -293,4 +294,28 @@ Deno.test("A failed DM leaves the operation active and alerts the agent who star
   await act(organizer, "start");
   assertEquals(items.get(`operations:${id}`)?.operation, saved);
   assertEquals(messages.length, 2);
+});
+
+Deno.test("The first mission report determines the result and score", async () => {
+  const { client } = fakeSlack(false);
+  const channel = "C1";
+  const agent = "U1";
+
+  for (
+    const [first, second, score] of [
+      ["success", "failure", 30],
+      ["failure", "success", 0],
+    ] as const
+  ) {
+    // Use a different agent for each case so scores start at zero.
+    const player = `${agent}-${first}`;
+    const { id } = await openOperation(client, channel, player);
+    for (const action of ["join", "start", "finish"] as const) {
+      await updateOperation(client, id, channel, player, action);
+    }
+    const report = { result: first, pickles: score };
+    assertEquals(await submitReport(client, id, player, first), report);
+    assertEquals(await submitReport(client, id, player, second), report);
+    assertEquals(await scoreFor(client, player), score);
+  }
 });

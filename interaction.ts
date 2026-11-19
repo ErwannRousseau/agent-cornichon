@@ -2,7 +2,8 @@ import type { SlackAPIClient } from "deno-slack-sdk/types.ts";
 import type { Operation } from "./game.ts";
 import { openOperation, updateOperation } from "./operations.ts";
 import { stickers } from "./stickers.ts";
-import { checked, getOperation, getReport, saveReport } from "./store.ts";
+import { submitReport } from "./reports.ts";
+import { checked } from "./store.ts";
 
 const operationTitle = "Opération Cornichon";
 
@@ -59,36 +60,16 @@ export async function handleGameAction(
 
   try {
     if (intent === "success" || intent === "failure") {
-      const operation = await getOperation(client, action.value);
-      if (!operation) {
-        await notify(
-          client,
-          channel,
-          user,
-          "Le QG ne retrouve plus cette opération.",
-        );
+      const report = await submitReport(client, action.value, user, intent);
+      if ("notice" in report) {
+        await notify(client, channel, user, report.notice);
         return;
       }
-      if (
-        operation.status !== "finished" || !operation.players.includes(user)
-      ) {
-        await notify(
-          client,
-          channel,
-          user,
-          "Ce rapport n’est pas disponible pour toi.",
-        );
-        return;
-      }
-      const id = `${operation.id}:${user}`;
-      const existing = await getReport(client, id);
-      const result = existing ?? intent;
-      if (!existing) await saveReport(client, id, user, result);
       const sticker = await stickers(client);
-      const text = result === "success"
+      const text = report.result === "success"
         ? `${
           sticker("reussite", "🥒")
-        } Mission accomplie. Le QG te crédite de 30 cornichons.`
+        } Mission accomplie. Le QG te crédite de ${report.pickles} cornichons.`
         : `${
           sticker("echec", "📁")
         } Échec consigné dans les archives du vinaigre.`;

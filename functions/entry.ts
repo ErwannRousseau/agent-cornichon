@@ -4,7 +4,7 @@ import {
   gameActionIds,
   handleGameAction,
 } from "../interaction.ts";
-import { scoreFor } from "../store.ts";
+import { scoreFor } from "../reports.ts";
 import { stickers } from "../stickers.ts";
 
 export const EntryFunction = DefineFunction({
@@ -64,7 +64,10 @@ export default SlackFunction(EntryFunction, async ({ inputs, client }) => {
       }, {
         type: "button" as const,
         action_id: "cornichon_score",
-        text: { type: "plain_text" as const, text: `${sticker("score", "🥒")} Mon score` },
+        text: {
+          type: "plain_text" as const,
+          text: `${sticker("score", "🥒")} Mon score`,
+        },
       }],
     }],
   };

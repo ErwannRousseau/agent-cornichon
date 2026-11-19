@@ -103,7 +103,10 @@ export async function saveReport(
   );
 }
 
-export async function scoreFor(client: SlackAPIClient, user: string) {
+export async function countSuccessfulReports(
+  client: SlackAPIClient,
+  user: string,
+) {
   let successes = 0;
   let cursor: string | undefined;
   do {
@@ -119,5 +122,5 @@ export async function scoreFor(client: SlackAPIClient, user: string) {
     successes += page.items?.length ?? 0;
     cursor = page.next_cursor;
   } while (cursor);
-  return successes * 30;
+  return successes;
 }
