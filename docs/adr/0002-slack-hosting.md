@@ -1,7 +1,8 @@
 # Host the pilot on Slack infrastructure
 
 The pilot runs on Slack infrastructure using the Deno SDK. Players access the
-game from the pinned button or the **Cornichon** shortcut in Slack’s `/` menu.
+game from a pinned workflow link or the **Cornichon** shortcut in Slack’s `/`
+menu.
 
 All pilot game data stays in Slack Datastore. The public API documentation
 describes no conditional write. The pilot accepts the residual risk.

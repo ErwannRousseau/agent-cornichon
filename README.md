@@ -11,62 +11,52 @@
 
 <p align="center">
   <a href="#play-a-round">Play a round</a> ·
-  <a href="#deploy-to-the-sandbox">Deploy to the sandbox</a> ·
-  <a href="docs/pilot-rules.md">Pilot rules</a>
+  <a href="docs/deployment.md">Deploy and operate</a>
 </p>
 
 ## Play a round
 
 1. Open the **Cornichon** shortcut from Slack’s `/` menu and click **Ouvrir les
-   inscriptions**. You can also use the pinned button if your channel has one.
+   inscriptions**. You can also open the pinned Cornichon workflow link if your
+   channel has one.
 2. Click **Rejoindre**, then **Démarrer la partie**. To play solo, start from
    your self-DM. Pickle HQ opens the DM with Agent Cornichon.
 3. Read your secret word in your DM and work it into the conversation. Each
    agent gets a different word from the [150-word list](dictionary.ts).
 4. After the meeting, click **Terminer l’opération** and report your result in
-   your DM. Your first answer is final. Check your total under **Mon score**.
+   your DM. A success earns **30 pickles**. Check your private total under **Mon
+   score**.
+
+- Add the app to the channel before playing. Invitations appear in the channel
+  even when you open the shortcut from a thread. From a one-on-one DM, the
+  invitation goes to your DM with Agent Cornichon.
+- Play with 1 to 20 agents. The organizer or any registered agent can start or
+  finish the round. You can leave before the round starts. The organizer can
+  cancel it.
+- You can have one active mission per channel. Once the round ends, you can play
+  again and submit your previous report later. The first saved result stands in
+  normal play. See the [Datastore decision](docs/adr/0002-slack-hosting.md) for
+  simultaneous clicks.
 
 ## Deploy to the sandbox
 
-This command updates the app already installed in **`agent-cornichon-dev`**. You
-need Node.js with `npx` and the Slack CLI. Use `slack login` to sign in and
-`slack auth list` to check your account.
-
-From the repository root, run `slack app list`. Find the `agent-cornichon-dev`
-entry and copy its **App ID** and **Team ID**. Use the **Team ID** on that
-entry. The **Workspace Grant** identifies a different target.
-
-Replace `APP_ID` and `TEAM_ID` in the command below with those values. `npx`
-makes Deno available to the Slack CLI during deployment.
+Run `slack app list` and copy the **App ID** and **Team ID** from the
+`agent-cornichon-dev` entry. Install the Slack CLI and Deno 2.9.6, with both
+commands available on your `PATH`. Replace the placeholders and run this from
+the repository root.
 
 ```sh
-npx --yes --package deno -c 'slack deploy --app APP_ID --team TEAM_ID --manifest-source local --hide-triggers'
+slack deploy --app APP_ID --team TEAM_ID --manifest-source local --hide-triggers
 ```
 
-When the CLI prints `Agent Cornichon deployed`, open the **Cornichon** shortcut
-and start a new solo round to check that your word arrives in your DM.
-
-<details>
-<summary>First installation in another sandbox</summary>
-
-With Deno and the Slack CLI available in your terminal, replace the placeholders
-with your target IDs. The deployment output shows the app ID.
-
-```sh
-slack deploy --team "<id-sandbox>" --org-workspace-grant "<id-workspace>" --app deployed --hide-triggers
-slack trigger create --team "<id-sandbox>" --org-workspace-grant "<id-workspace>" --app "<id-app>" --trigger-def triggers/cornichon.ts
-```
-
-Post the trigger link in the pilot channel and pin the message containing the
-workflow button.
-
-</details>
+See the [deployment guide](docs/deployment.md) for private installations,
+shortcut setup, and rollback.
 
 ## Customize Pickle HQ
 
-In Slack’s emoji picker, click **Add Emoji**. Upload the PNGs from the
-[Agent Cornichon sticker pack](assets/emoji/) using the filenames without
-`.png`.
+In Slack’s emoji picker, click **Add Emoji**. Upload the seven PNGs listed below
+from the [Agent Cornichon sticker pack](assets/emoji/) using the filenames
+without `.png`.
 
 The bot uses these seven custom emoji when available and standard Slack emoji
 otherwise.
@@ -78,16 +68,17 @@ otherwise.
 
 ## Test and maintain the pilot
 
-**Local tests.** Run the game and integration tests from the repository root.
+Run the same checks as GitHub Actions from the repository root with Deno 2.9.6.
 
 ```sh
-deno test
+deno fmt --check
+deno lint
+deno check --frozen manifest.ts triggers/cornichon.ts
+deno test --frozen
 ```
 
-**Two-player Slack test.** Join a round from two accounts and verify that each
-account receives a different word, visible only in its DM. After the round,
-report success on one account and failure on the other. For accounts with no
-previous rounds, **Mon score** should show 30 and 0 respectively.
+Use the [Slack smoke test](docs/deployment.md#smoke-test) to verify delivery
+with real accounts after deploying.
 
 <details>
 <summary>Test with the sandbox Datastore</summary>
@@ -102,16 +93,6 @@ CORNICHON_TEST_TEAM="<id-sandbox>" CORNICHON_TEST_APP="<id-app>" \
 
 </details>
 
-<details>
-<summary>Delete an agent’s game data</summary>
-
-The pilot lead finds the agent’s Slack ID and first cancels any open operation
-the agent organized. In the Datastore, delete their entries from `reports`,
-remove their ID from `players`, and remove their entry from `words` in the
-affected operations. Clear their ID wherever it appears as `organizer`. DMs and
-channel messages follow the Slack workspace’s retention settings.
-
-</details>
-
-The pilot runs on Slack infrastructure. The app’s Datastore holds operations and
-reports. [Pilot rules](docs/pilot-rules.md)
+The app stores game data in Slack. See
+[game data and deletion](docs/deployment.md#game-data-and-deletion) for the
+maintainer procedure.

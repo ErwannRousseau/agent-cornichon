@@ -24,7 +24,9 @@ operation.
 **Report**
 
 The agent’s private declaration of their mission result. They succeed if they
-say their word, even if someone notices. The first result they submit is final.
+say their word, even if someone notices. The first saved result is final for
+sequential submissions. See the
+[Datastore decision](docs/adr/0002-slack-hosting.md).
 
 **Pickle**
 

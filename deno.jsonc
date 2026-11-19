@@ -1,4 +1,5 @@
 {
+  "exclude": [".slack/apps.json", ".slack/apps.dev.json", ".slack/config.json"],
   "imports": {
     "deno-slack-sdk/": "https://deno.land/x/deno_slack_sdk@2.15.1/",
     "deno-slack-api/": "https://deno.land/x/deno_slack_api@2.8.0/"
