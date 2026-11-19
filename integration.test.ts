@@ -145,7 +145,7 @@ function fakeSlack(realDatastore: boolean, unavailableDM?: string) {
   return { client, items, messages, notices };
 }
 
-Deno.test("parcours complet persiste missions, rapporte une fois et calcule les scores", async () => {
+Deno.test("The full workflow persists missions, accepts one result, and calculates scores", async () => {
   const realDatastore = (await Deno.permissions.query({
         name: "env",
         variable: "CORNICHON_TEST_TEAM",
@@ -250,7 +250,7 @@ Deno.test("parcours complet persiste missions, rapporte une fois et calcule les 
   }
 });
 
-Deno.test("un DM en échec laisse la partie en cours et prévient l’agent qui l’a lancée", async () => {
+Deno.test("A failed DM leaves the operation active and alerts the agent who started it", async () => {
   const { client, items, messages, notices } = fakeSlack(false, "D-U2");
   const channel = "C1";
   const organizer = "U1";

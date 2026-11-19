@@ -74,7 +74,7 @@ otherwise.
 **Local tests.** Run the game and integration tests from the repository root.
 
 ```sh
-deno test game_test.ts integration_test.ts
+deno test game.test.ts integration.test.ts
 ```
 
 **Two-player Slack test.** Join a round from two accounts and verify that each
@@ -90,7 +90,7 @@ test records when it finishes. Supply the test sandbox and app IDs.
 
 ```sh
 CORNICHON_TEST_TEAM="<id-sandbox>" CORNICHON_TEST_APP="<id-app>" \
-  deno test --allow-run=slack --allow-env=CORNICHON_TEST_TEAM,CORNICHON_TEST_APP integration_test.ts
+  deno test --allow-run=slack --allow-env=CORNICHON_TEST_TEAM,CORNICHON_TEST_APP integration.test.ts
 ```
 
 </details>

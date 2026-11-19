@@ -29,7 +29,7 @@ function operation(): Operation {
   };
 }
 
-Deno.test("le lancement garde les agents éligibles et attribue des mots distincts", () => {
+Deno.test("Starting keeps eligible agents and assigns distinct words", () => {
   const active = transition(operation(), "U1", "start", new Set(["U3"]));
   assert(active.status === "active", "L’opération doit démarrer.");
   assert(
@@ -47,14 +47,14 @@ Deno.test("le lancement garde les agents éligibles et attribue des mots distinc
   );
 });
 
-Deno.test("une inscription est bloquée si une mission est en cours dans le canal", () => {
+Deno.test("An active mission blocks registration in the same channel", () => {
   rejects(
     () => transition(operation(), "U2", "join", new Set(["U2"])),
     "Tu as déjà une mission en cours",
   );
 });
 
-Deno.test("un agent inscrit peut lancer une opération en solo dans un DM", () => {
+Deno.test("A registered agent can start a solo operation in a DM", () => {
   const solo = { ...operation(), channel: "D1", players: ["U2"] };
   const active = transition(solo, "U2", "start", new Set());
   assert(active.status === "active", "L’opération solo doit démarrer.");
@@ -64,7 +64,7 @@ Deno.test("un agent inscrit peut lancer une opération en solo dans un DM", () =
   );
 });
 
-Deno.test("le lancement exige un agent disponible et refuse les personnes extérieures", () => {
+Deno.test("Starting requires an eligible agent and rejects outsiders", () => {
   rejects(
     () => transition(operation(), "U1", "start", new Set(["U1", "U2", "U3"])),
     "au moins un agent disponible",
@@ -75,7 +75,7 @@ Deno.test("le lancement exige un agent disponible et refuse les personnes extér
   );
 });
 
-Deno.test("rejoindre deux fois reste sans effet et quitter n’enlève que l’agent", () => {
+Deno.test("Joining twice has no effect and leaving removes only that agent", () => {
   const current = operation();
   const repeated = transition(current, "U2", "join", new Set());
   assert(repeated === current, "La deuxième inscription est idempotente.");
@@ -83,7 +83,7 @@ Deno.test("rejoindre deux fois reste sans effet et quitter n’enlève que l’a
   assert(left.players.join(",") === "U1,U3", "L’agent doit être retiré.");
 });
 
-Deno.test("un agent inscrit peut terminer et ouvrir les rapports", () => {
+Deno.test("A registered agent can finish the operation and open reporting", () => {
   const active = transition(operation(), "U1", "start", new Set());
   const finished = transition(active, "U2", "finish", new Set());
   assert(
@@ -96,7 +96,7 @@ Deno.test("un agent inscrit peut terminer et ouvrir les rapports", () => {
   );
 });
 
-Deno.test("l’annulation est réservée à l’organisateur", () => {
+Deno.test("Only the organizer can cancel the operation", () => {
   rejects(
     () => transition(operation(), "U2", "cancel", new Set()),
     "Seul l’organisateur",
