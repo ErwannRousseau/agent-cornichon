@@ -202,13 +202,27 @@ Deno.test("The full workflow persists missions, accepts one result, and calculat
       message.channel.startsWith("D-")
     );
     assertEquals(missionDMs.length, 2);
-    assertNotEquals(missionDMs[0].text, missionDMs[1].text);
+    for (const agent of [alice, bob]) {
+      assertEquals(
+        missionDMs.find((message) => message.channel === `D-${agent}`)
+          ?.text.includes(`« ${operation.words[agent]} »`),
+        true,
+      );
+    }
 
     await act(alice, "finish");
     const reportDMs = messages.filter((message) =>
       message.channel.startsWith("D-")
     );
     assertEquals(reportDMs.length, 4);
+    for (const agent of [alice, bob]) {
+      assertEquals(
+        reportDMs.find((message) =>
+          message.channel === `D-${agent}` && message.blocks?.length
+        )?.text.includes("Le QG attend ton rapport."),
+        true,
+      );
+    }
     await handleGameAction({
       client,
       action: { action_id: "cornichon_success", value: id },
@@ -284,12 +298,13 @@ Deno.test("A failed DM leaves the operation active and alerts the agent who star
     ) => message.channel),
     ["D-U1"],
   );
-  assertEquals(notices, [{
-    channel,
-    user: organizer,
-    text:
-      "L’action est enregistrée. Le QG n’a pas pu transmettre tous les messages.",
-  }]);
+  assertEquals(notices.length, 1);
+  assertEquals(notices[0].channel, channel);
+  assertEquals(notices[0].user, organizer);
+  assertEquals(
+    notices[0].text,
+    "L’action est enregistrée. Le QG n’a pas pu transmettre tous les messages.",
+  );
 
   await act(organizer, "start");
   assertEquals(items.get(`operations:${id}`)?.operation, saved);

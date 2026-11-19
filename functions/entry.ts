@@ -4,6 +4,7 @@ import {
   gameActionIds,
   handleGameAction,
 } from "../interaction.ts";
+import { sendPrivateMenu, sendPrivateReply } from "../private-messages.ts";
 import { scoreFor } from "../reports.ts";
 import { stickers } from "../stickers.ts";
 
@@ -30,18 +31,8 @@ const gameAndMenuActionIds = [
 ];
 
 export default SlackFunction(EntryFunction, async ({ inputs, client }) => {
-  const privateChat = /^[DUW]/.test(inputs.channel_id);
-  let channel = inputs.channel_id;
-  if (privateChat) {
-    const dm = await client.conversations.open({ users: inputs.user_id });
-    if (!dm.ok || !dm.channel?.id) {
-      throw new Error(dm.error ?? "Slack DM unavailable");
-    }
-    channel = dm.channel.id;
-  }
   const sticker = await stickers(client);
   const message = {
-    channel,
     text: "Bienvenue au QG du Bocal.",
     blocks: [{
       type: "section" as const,
@@ -71,10 +62,7 @@ export default SlackFunction(EntryFunction, async ({ inputs, client }) => {
       }],
     }],
   };
-  const response = privateChat
-    ? await client.chat.postMessage(message)
-    : await client.chat.postEphemeral({ ...message, user: inputs.user_id });
-  if (!response.ok) throw new Error(response.error ?? "Slack API error");
+  await sendPrivateMenu(client, inputs.channel_id, inputs.user_id, message);
   return { completed: false };
 })
   .addBlockActionsHandler(gameAndMenuActionIds, async (ctx) => {
@@ -95,10 +83,7 @@ export default SlackFunction(EntryFunction, async ({ inputs, client }) => {
       const text = `Ton score est de ${score} cornichons ${
         sticker("score", "🥒")
       }.`;
-      const response = channel.startsWith("D")
-        ? await ctx.client.chat.postMessage({ channel, text })
-        : await ctx.client.chat.postEphemeral({ channel, user, text });
-      if (!response.ok) throw new Error(response.error ?? "Slack API error");
+      await sendPrivateReply(ctx.client, channel, user, { text });
       return;
     }
     await handleGameAction(ctx);

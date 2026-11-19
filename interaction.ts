@@ -2,6 +2,7 @@ import type { SlackAPIClient } from "deno-slack-sdk/types.ts";
 import type { Operation } from "./game.ts";
 import { openOperation, updateOperation } from "./operations.ts";
 import { stickers } from "./stickers.ts";
+import { sendDirectMessage, sendEphemeralMessage } from "./private-messages.ts";
 import { submitReport } from "./reports.ts";
 import { checked } from "./store.ts";
 
@@ -182,15 +183,13 @@ function invitation(operation: Operation, sticker: Sticker) {
   return { text, blocks };
 }
 
-async function sendDM(
+function sendDM(
   client: SlackAPIClient,
   operation: Operation,
   user: string,
   intent: "start" | "finish",
   sticker: Sticker,
 ) {
-  const { channel } = checked(await client.conversations.open({ users: user }));
-  if (!channel?.id) throw new Error("Slack DM channel missing");
   const text = intent === "start"
     ? `${sticker("mission", "🕵️")} ${operationTitle} · Ton mot secret est « ${
       operation.words[user]
@@ -198,18 +197,15 @@ async function sendDM(
     : `${
       sticker("rapport", "📡")
     } ${operationTitle} · Le QG attend ton rapport. As-tu placé ton mot ?`;
-  return checked(
-    await client.chat.postMessage({
-      channel: channel.id,
-      text,
-      ...(intent === "finish" && {
-        blocks: [
-          { type: "section", text: { type: "mrkdwn", text } },
-          buttons(operation.id, ["success", "failure"]),
-        ],
-      }),
+  return sendDirectMessage(client, user, {
+    text,
+    ...(intent === "finish" && {
+      blocks: [
+        { type: "section", text: { type: "mrkdwn", text } },
+        buttons(operation.id, ["success", "failure"]),
+      ],
     }),
-  );
+  });
 }
 
 async function notify(
@@ -218,5 +214,5 @@ async function notify(
   user: string,
   text: string,
 ) {
-  checked(await client.chat.postEphemeral({ channel, user, text }));
+  await sendEphemeralMessage(client, channel, user, { text });
 }

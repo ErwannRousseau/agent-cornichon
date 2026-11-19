@@ -74,7 +74,7 @@ otherwise.
 **Local tests.** Run the game and integration tests from the repository root.
 
 ```sh
-deno test game.test.ts integration.test.ts
+deno test
 ```
 
 **Two-player Slack test.** Join a round from two accounts and verify that each
